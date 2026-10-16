@@ -1,0 +1,5 @@
+node_modules/
+*.ocaddons-backup
+*.freelancer-new
+*.freelancer-restore
+installa.bat
