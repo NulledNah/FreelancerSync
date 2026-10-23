@@ -77,7 +77,7 @@
     ".fln-slot-btn:hover{background:var(--surface-base-hover,rgba(255,255,255,.07));color:var(--text-strong,#e8e8e8)}",
     ".fln-rail-btn .fln-ico,.fln-float-btn .fln-ico{width:18px;height:18px;display:block;flex:none}",
     ".fln-slot-btn .fln-ico{width:16px;height:16px;display:block;flex:none}",
-    ".fln-spin{display:none}",
+    ".fln-rail-btn .fln-spin,.fln-slot-btn .fln-spin,.fln-float-btn .fln-spin{display:none}",
     ".fln-loading{color:var(--text-strong,#e8e8e8)}",
     ".fln-loading .fln-mark{display:none}",
     ".fln-loading .fln-spin{display:block;animation:fln-rotate .8s linear infinite}",

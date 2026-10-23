@@ -9,7 +9,7 @@ It works by patching the packaged `app.asar` (append-only and reversible) and
 shares a single main entry with the DeepSeek panel, so the two addons can be
 installed, removed and updated independently.
 
-Recommended release: **v1.1.0**.
+Recommended release: **v1.1.1**.
 
 ## Features
 
