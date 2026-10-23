@@ -72,15 +72,18 @@
   var CSS = [
     ".fln-rail-btn{position:relative;width:32px;height:32px;padding:0;border:1px solid transparent;border-radius:9px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-weak,#8f8f8f);transition:background .14s ease,color .14s ease}",
     ".fln-rail-btn:hover{background:var(--surface-base-hover,rgba(255,255,255,.07));color:var(--text-strong,#e8e8e8)}",
-    ".fln-rail-btn:disabled{cursor:default}",
-    ".fln-rail-btn .fln-ico{width:18px;height:18px;display:block;flex:none}",
-    ".fln-rail-btn .fln-spin{display:none}",
-    ".fln-rail-btn.fln-loading{color:var(--text-strong,#e8e8e8)}",
-    ".fln-rail-btn.fln-loading .fln-mark{display:none}",
-    ".fln-rail-btn.fln-loading .fln-spin{display:block;animation:fln-rotate .8s linear infinite}",
+    ".fln-rail-btn:disabled,.fln-slot-btn:disabled,.fln-float-btn:disabled{cursor:default}",
+    ".fln-slot-btn{position:relative;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--v2-icon-icon-muted,var(--text-weak,#9a9a9a));flex:none;transition:background .14s ease,color .14s ease}",
+    ".fln-slot-btn:hover{background:var(--surface-base-hover,rgba(255,255,255,.07));color:var(--text-strong,#e8e8e8)}",
+    ".fln-rail-btn .fln-ico,.fln-float-btn .fln-ico{width:18px;height:18px;display:block;flex:none}",
+    ".fln-slot-btn .fln-ico{width:16px;height:16px;display:block;flex:none}",
+    ".fln-spin{display:none}",
+    ".fln-loading{color:var(--text-strong,#e8e8e8)}",
+    ".fln-loading .fln-mark{display:none}",
+    ".fln-loading .fln-spin{display:block;animation:fln-rotate .8s linear infinite}",
     "@keyframes fln-rotate{to{transform:rotate(360deg)}}",
     ".fln-float-btn{position:fixed;left:10px;bottom:10px;z-index:2147483600;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:9px;border:1px solid var(--border-base,rgba(255,255,255,.14));background:var(--background-strong,#1b1b1b);cursor:pointer;color:var(--text-strong,#e8e8e8);box-shadow:0 1px 2px rgba(0,0,0,.25)}",
-    ".fln-float-btn .fln-ico{width:18px;height:18px}",
+    ".fln-plugin-slot{margin-left:auto;margin-right:auto;display:flex;align-items:center;gap:4px;flex:none}",
     ".fln-toast-wrap{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:2147483646;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}",
     ".fln-toast{pointer-events:auto;max-width:min(560px,92vw);border:1px solid var(--border-base,rgba(255,255,255,.16));border-radius:10px;background:var(--background-strong,#1b1b1b);color:var(--text-strong,#e8e8e8);box-shadow:0 12px 32px -10px rgba(0,0,0,.6);padding:10px 12px;font-family:var(--font-sans,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif);font-size:13px;line-height:1.45;display:flex;gap:9px;align-items:flex-start;opacity:0;transform:translateY(8px);transition:opacity .18s ease,transform .18s ease}",
     ".fln-toast.fln-show{opacity:1;transform:translateY(0)}",
@@ -223,6 +226,52 @@
     }
     return fallback;
   }
+  // Composer slot: the new prompt bar has a controls row; plugin buttons are
+  // appended after the model/effort controls. The periodic re-mount puts the
+  // button back if a re-render drops it.
+  function composerRow() {
+    var forms = document.querySelectorAll("form");
+    for (var i = forms.length - 1; i >= 0; i--) {
+      if (String(forms[i].className).indexOf("prompt-input") < 0) continue;
+      var rows = forms[i].querySelectorAll("div.flex.h-11");
+      for (var j = rows.length - 1; j >= 0; j--) {
+        if (rows[j].querySelector("button")) return rows[j];
+      }
+    }
+    return null;
+  }
+  function pluginSlot(group) {
+    // Prefer the slot created by the DeepSeek addon so both buttons sit in the
+    // same centered group, Freelancer right after DeepSeek.
+    var slot = document.getElementById("dsp-plugin-slot") || document.getElementById("fln-plugin-slot");
+    if (!slot) slot = el("div", { id: "fln-plugin-slot", class: "fln-plugin-slot" });
+    if (slot.parentNode !== group) group.appendChild(slot);
+    // Drop our now-empty own slot if the shared one showed up later.
+    var own = document.getElementById("fln-plugin-slot");
+    if (own && own !== slot && !own.firstChild && own.parentNode) own.parentNode.removeChild(own);
+    return slot;
+  }
+  function mountComposer() {
+    var row = composerRow();
+    if (!row) return false;
+    // Plugin buttons go after the model/effort controls, centered in the free
+    // space before the send button (the green slot).
+    var group = null, kids = row.children;
+    for (var i = 0; i < kids.length; i++) {
+      if (/flex-1/.test(kids[i].className) && kids[i].querySelector("button")) { group = kids[i]; break; }
+    }
+    if (!group) group = row;
+    btn.classList.remove("fln-rail-btn", "fln-float-btn");
+    btn.classList.add("fln-slot-btn");
+    var slot = pluginSlot(group);
+    var dsp = slot.querySelector('[data-deepseek-panel].dsp-slot-btn');
+    if (dsp && dsp.parentNode === slot) {
+      if (btn.previousElementSibling !== dsp) slot.insertBefore(btn, dsp.nextSibling);
+    } else if (btn.parentNode !== slot) {
+      slot.appendChild(btn);
+    }
+    return true;
+  }
   function inRail() {
     var p = btn.parentNode;
     if (!p || p === document.body) return false;
@@ -230,9 +279,13 @@
     return r.left < 12 && r.width <= 92 && r.height > 200;
   }
   function mountLauncher() {
-    if (inRail()) return true;
+    if (mountComposer()) return true;
+    btn.classList.remove("fln-slot-btn");
+    if (inRail()) { btn.classList.remove("fln-float-btn"); btn.classList.add("fln-rail-btn"); return true; }
     var rail = findRail();
     if (rail) {
+      btn.classList.remove("fln-float-btn");
+      btn.classList.add("fln-rail-btn");
       var cluster = bottomCluster(rail);
       if (cluster) {
         // Sit right after the DeepSeek button when present, else first.
@@ -242,13 +295,12 @@
         } else if (btn.parentNode !== cluster || cluster.firstChild !== btn) {
           cluster.insertBefore(btn, cluster.firstChild);
         }
-        btn.classList.remove("fln-float-btn");
-        return true;
+      } else if (btn.parentNode !== rail || rail.lastElementChild !== btn) {
+        rail.appendChild(btn);
       }
-      if (btn.parentNode !== rail || rail.lastElementChild !== btn) rail.appendChild(btn);
-      btn.classList.remove("fln-float-btn");
       return true;
     }
+    btn.classList.remove("fln-rail-btn");
     if (btn.parentNode !== document.body) { btn.classList.add("fln-float-btn"); document.body.appendChild(btn); }
     return false;
   }

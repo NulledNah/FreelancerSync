@@ -1,7 +1,7 @@
 # FreelancerSync
 
 Adds a Freelancer sync button to the OpenCode desktop app. One click on the
-small Freelancer icon in the bottom-left rail keeps the local project folders
+small Freelancer icon in the prompt bar keeps the local project folders
 in sync with your Freelancer bids: pending bids under `pending/`, awarded bids
 under `awarded/`, and folders whose project is gone get deleted.
 
@@ -9,12 +9,13 @@ It works by patching the packaged `app.asar` (append-only and reversible) and
 shares a single main entry with the DeepSeek panel, so the two addons can be
 installed, removed and updated independently.
 
-Recommended release: **v1.0.0**.
+Recommended release: **v1.1.0**.
 
 ## Features
 
-- A Freelancer icon in the bottom-left rail, right after the DeepSeek button
-  (or first when DeepSeek is not installed), styled with the OpenCode theme.
+- A Freelancer icon in the prompt bar (composer), right after the DeepSeek
+  button when present, styled with the OpenCode theme. On older layouts it falls
+  back to the bottom-left rail, then to a floating button.
 - Click to sync: the icon turns into spinning arrows while it works, then a
   toast reports what was done (`pending`, `awarded`, moved, created, deleted).
 - One-time login: paste a Freelancer Personal Access Token once; it is stored
@@ -44,8 +45,8 @@ Close OpenCode first.
     cd "Freelancer sync plugin"
     node apply.js install
 
-Start OpenCode. The Freelancer button appears in the bottom-left rail. On the
-first click, paste your Personal Access Token.
+Start OpenCode. The Freelancer button appears in the prompt bar, after the
+model/effort controls. On the first click, paste your Personal Access Token.
 
 Other commands:
 
@@ -89,6 +90,6 @@ Set the `FREELANCER_DIR` environment variable to point elsewhere.
 - `apply.js` - installer (install / remove / restore-all / status / verify).
 - `freelancer-main.js` - main-process module (token storage, IPC, sync trigger).
 - `freelancer-sync.mjs` - pure sync logic (bids -> folder reconciliation).
-- `freelancer-panel.js` - renderer rail button, spin animation, toast, token modal.
+- `freelancer-panel.js` - renderer prompt-bar button, spin animation, toast, token modal.
 - `test_selfcheck.mjs` - runnable check for the sync logic.
 - `VERSION` - panel version shown in the UI (injected at patch time).

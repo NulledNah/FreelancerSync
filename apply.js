@@ -286,7 +286,7 @@ function install(args) {
   fs.renameSync(tmp, asar);
 
   console.log("Patch applicata: " + asar);
-  console.log("Riavvia OpenCode. Il pulsante Freelancer e' nella rail in basso a sinistra.");
+  console.log("Riavvia OpenCode. Il pulsante Freelancer e' nella barra del prompt, dopo modello/effort.");
   console.log("Per rimuoverlo: node apply.js remove (solo Freelancer) o restore-all (tutti gli addon).");
 }
 
