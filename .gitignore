@@ -2,3 +2,4 @@ node_modules/
 *.ocaddons-backup
 *.freelancer-new
 *.freelancer-restore
+AGENTS.md
