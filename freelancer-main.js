@@ -65,7 +65,7 @@ ipcMain.handle("freelancer-status", async () => {
 
 ipcMain.handle("freelancer-login", async (_event, value) => {
   const clean = typeof value === "string" ? value.trim() : "";
-  if (clean.length < 8) return { ok: false, error: "token non valido" };
+  if (clean.length < 8) return { ok: false, error: "invalid token" };
   const check = await validate(clean);
   if (!check.ok) return check;
   saveToken(clean);

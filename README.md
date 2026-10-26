@@ -9,7 +9,7 @@ It works by patching the packaged `app.asar` (append-only and reversible) and
 shares a single main entry with the DeepSeek panel, so the two addons can be
 installed, removed and updated independently.
 
-Recommended release: **v1.1.1**.
+Recommended release: **v1.1.2**.
 
 ## Features
 
@@ -41,7 +41,7 @@ Recommended release: **v1.1.1**.
 ## Compatibility
 
 - Current OpenCode desktop UI (new prompt / composer bar): use this release,
-  **v1.1.1**. The button is placed in the prompt bar, after the model / effort
+  **v1.1.2**. The button is placed in the prompt bar, after the model / effort
   controls.
 - Older OpenCode desktop UI (bottom-left rail with Settings / Help): use the
   previous release, **v1.0.0**, where the button sits above the settings and

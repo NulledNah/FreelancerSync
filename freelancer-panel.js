@@ -59,12 +59,13 @@
   }
 
   // ---- bridge (added to preload by apply.js) ------------------------------
-  function bridge() { return window.api || {}; }
+  function bridge() { return window.freelancerApi || window.api || {}; }
   function apiStatus() { var b = bridge(); return b.freelancerStatus ? b.freelancerStatus() : Promise.resolve({ ok: false, valid: false }); }
   function apiLogin(t) { var b = bridge(); return b.freelancerLogin ? b.freelancerLogin(t) : Promise.resolve({ ok: false, error: "bridge mancante" }); }
   function apiSync() { var b = bridge(); return b.freelancerSync ? b.freelancerSync() : Promise.resolve({ ok: false, error: "bridge mancante" }); }
   function openExternal(url) {
-    if (window.api && typeof window.api.openLink === "function") window.api.openLink(url);
+    if (window.freelancerApi && typeof window.freelancerApi.openLink === "function") window.freelancerApi.openLink(url);
+    else if (window.api && typeof window.api.openLink === "function") window.api.openLink(url);
     else window.open(url, "_blank");
   }
 
@@ -126,13 +127,13 @@
 
   var input = el("input", { class: "fln-input", type: "password", placeholder: "Personal Access Token", autocomplete: "off", spellcheck: "false" });
   var errorEl = el("p", { class: "fln-error" });
-  var connectBtn = el("button", { class: "fln-btn fln-primary", type: "button", text: "Connetti" });
+  var connectBtn = el("button", { class: "fln-btn fln-primary", type: "button", text: "Connect" });
   var cancelBtn = el("button", { class: "fln-btn", type: "button", text: "Annulla" });
   var linkEl = el("a", { class: "fln-link", href: "#", text: "Crea un token su accounts.freelancer.com" });
   var overlay = el("div", { class: "fln-overlay" }, [
     el("div", { class: "fln-modal" }, [
       el("h2", { text: "Token Freelancer" }),
-      el("p", { text: "Incolla una volta il tuo Personal Access Token: viene salvato in locale e non ti verra' piu' chiesto." }),
+      el("p", { text: "Paste your Personal Access Token once: it is stored locally and you will not be asked again." }),
       input,
       el("p", {}, [linkEl]),
       errorEl,
@@ -140,7 +141,18 @@
     ])
   ]);
 
+  // Sit the recap toasts just above the prompt box so they never cover the
+  // composer controls (mic, refresh, palette, send).
+  function placeToasts() {
+    var form = promptForm();
+    var r = form && form.getBoundingClientRect();
+    if (!r) { toastWrap.style.left = "50%"; toastWrap.style.bottom = "22px"; return; }
+    toastWrap.style.left = (r.left + r.width / 2) + "px";
+    toastWrap.style.bottom = (window.innerHeight - r.top + 10) + "px";
+  }
+
   function toast(message, isError) {
+    placeToasts();
     var node = el("div", { class: "fln-toast" + (isError ? " fln-err" : "") }, [
       el("span", { class: "fln-tdot" }),
       el("span", { class: "fln-tmsg", text: message })
@@ -158,7 +170,7 @@
 
   function summarize(s) {
     return "Freelancer: " + s.pending + " pending, " + s.awarded + " awarded - " +
-      s.moved + " spostate, " + s.created + " create, " + s.deleted + " cancellate.";
+      s.moved + " moved, " + s.created + " created, " + s.deleted + " deleted.";
   }
 
   function runSync() {
@@ -168,9 +180,9 @@
     apiSync().then(function (res) {
       if (res && res.ok) toast(summarize(res.summary), false);
       else if (res && res.error === "not_authenticated") openModal();
-      else toast("Sync fallito: " + ((res && res.error) || "errore"), true);
+      else toast("Sync failed: " + ((res && res.error) || "error"), true);
     }).catch(function (e) {
-      toast("Sync fallito: " + e, true);
+      toast("Sync failed: " + e, true);
     }).then(function () {
       btn.disabled = false;
       btn.classList.remove("fln-loading");
@@ -179,14 +191,14 @@
 
   function onConnect() {
     var value = input.value.trim();
-    if (value.length < 8) { errorEl.textContent = "Incolla il token."; return; }
+    if (value.length < 8) { errorEl.textContent = "Paste the token."; return; }
     connectBtn.disabled = true;
-    errorEl.textContent = "Verifica...";
+    errorEl.textContent = "Checking...";
     apiLogin(value).then(function (res) {
       if (res && res.ok) { closeModal(); runSync(); }
-      else errorEl.textContent = "Token non valido: " + ((res && res.error) || "errore");
+      else errorEl.textContent = "Invalid token: " + ((res && res.error) || "error");
     }).catch(function (e) {
-      errorEl.textContent = "Errore: " + e;
+      errorEl.textContent = "Error: " + e;
     }).then(function () { connectBtn.disabled = false; });
   }
 
@@ -229,14 +241,23 @@
   // Composer slot: the new prompt bar has a controls row; plugin buttons are
   // appended after the model/effort controls. The periodic re-mount puts the
   // button back if a re-render drops it.
-  function composerRow() {
+  function promptForm() {
     var forms = document.querySelectorAll("form");
     for (var i = forms.length - 1; i >= 0; i--) {
-      if (String(forms[i].className).indexOf("prompt-input") < 0) continue;
-      var rows = forms[i].querySelectorAll("div.flex.h-11");
-      for (var j = rows.length - 1; j >= 0; j--) {
-        if (rows[j].querySelector("button")) return rows[j];
-      }
+      if (String(forms[i].className).indexOf("prompt-input") >= 0) return forms[i];
+    }
+    return null;
+  }
+  function composerRow() {
+    // 2.1.4 keeps the model/effort controls in [data-slot=composer-controls]; older
+    // builds used a form.prompt-input with a flex-1 cell.
+    var controls = document.querySelectorAll("[data-component=composer] [data-slot=composer-controls] > div");
+    if (controls.length) return controls[controls.length - 1];
+    var form = promptForm();
+    if (!form) return null;
+    var rows = form.querySelectorAll("div.flex.h-11");
+    for (var j = rows.length - 1; j >= 0; j--) {
+      if (rows[j].querySelector("button")) return rows[j];
     }
     return null;
   }
@@ -316,6 +337,7 @@
     input.addEventListener("keydown", function (e) { e.stopPropagation(); if (e.key === "Enter") onConnect(); if (e.key === "Escape") closeModal(); });
     overlay.addEventListener("mousedown", function (e) { if (e.target === overlay) closeModal(); });
     linkEl.addEventListener("click", function (e) { e.preventDefault(); openExternal(TOKEN_URL); });
+    window.addEventListener("resize", placeToasts);
     mountLauncher();
     setInterval(mountLauncher, 1500);
   }
